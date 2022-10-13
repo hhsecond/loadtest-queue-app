@@ -8,12 +8,12 @@ from lightning.app import CloudCompute
 
 
 class LocustWork(LightningWork):
-    def __init__(self, work_id: int, compute_config: CloudCompute, is_master: Optional[bool] = False):
-        super().__init__(cloud_compute=compute_config, parallel=True)
+    def __init__(self, work_id: int, is_master: Optional[bool] = False):
+        super().__init__(parallel=True)
         self.work_id = work_id
         self.is_master = is_master
 
-    def run(self, master_ip: Optional[str] = None, master_port: Optional[str] = None):
+    def run(self, master_ip: Optional[str] = None, master_port: Optional[int] = None):
 
         if not self.is_master and (master_ip is None or master_port is None):
             raise ValueError("master_ip is required for slave nodes")
@@ -21,7 +21,7 @@ class LocustWork(LightningWork):
         if self.is_master:
             command = ["locust", "--web-host", "0.0.0.0", "--web-port", str(self.port), "--master"]
         else:
-            command = ["locust", "--worker", "--master-host", master_ip, "--master-port", master_port]
+            command = ["locust", "--worker", "--master-host", master_ip, "--master-port", str(master_port)]
 
         subprocess.run(command, cwd=Path(__file__).parent, check=True)
 
@@ -29,20 +29,26 @@ class LocustWork(LightningWork):
 class Root(LightningFlow):
     def __init__(self):
         super().__init__()
-        self.slaves = List()
-        self.compute = CloudCompute()
-        self.master = LocustWork(0, self.compute, is_master=True)
+        compute = CloudCompute()
+        self.master = LocustWork(0, is_master=True)
+        self.master.cloud_compute = compute
+
+        self.slave1 = LocustWork(1)
+        self.slave1.cloud_compute = compute
+
+        self.slave2 = LocustWork(1)
+        self.slave2.cloud_compute = compute
+
+        self.slave3 = LocustWork(1)
+        self.slave3.cloud_compute = compute
 
     def run(self):
         self.master.run()
-
-        num_workers = 1
-
-        for i in range(1, num_workers + 1):
-            self.slaves.append(LocustWork(i, self.compute))
-
-        for w in self.slaves:
-            w.run(master_ip=self.master.internal_ip, master_port=self.master.port)
+        print(self.master.internal_ip, self.master.port)
+        if self.master.is_running and self.master.internal_ip:
+            self.slave1.run(master_ip=self.master.internal_ip, master_port=self.master.port)
+            self.slave2.run(master_ip=self.master.internal_ip, master_port=self.master.port)
+            self.slave3.run(master_ip=self.master.internal_ip, master_port=self.master.port)
 
     def configure_layout(self):
         return {"name": "Dashboard", "content": self.master.url}
