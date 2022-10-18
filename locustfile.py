@@ -1,6 +1,8 @@
 import os
+import pickle
 
-from locust import HttpUser, task
+from lightning.app import LightningFlow
+from locust import FastHttpUser, task
 from locust.log import setup_logging
 
 setup_logging("INFO", None)
@@ -10,10 +12,83 @@ if queue_url is None:
     raise ValueError("LIGHTNING_HTTP_QUEUE_URL is not set")
 
 
-class User(HttpUser):
+class TestFlow(LightningFlow):
+    pass
+
+
+pickled_work = pickle.dumps(TestFlow())
+
+long_json = pickle.dumps({k: str(k) for k in range(100000)})
+
+
+class User(FastHttpUser):
 
     host = queue_url
 
-    @task
-    def my_task(self):
-        self.client.get("/v1/test-queue/test-app/length")
+    @task(131)
+    def api_response_queue(self):
+        self.client.post("/v1/test-app/API_RESPONSE_QUEUE", params={"action": "pop"})
+
+    @task(57)
+    def api_delta_queue(self):
+        self.client.post("/v1/test-app/API_DELTA_QUEUE", params={"action": "pop"})
+
+    @task(57)
+    def delta_queue(self):
+        self.client.post("/v1/test-app/DELTA_QUEUE", params={"action": "pop"})
+
+    @task(131)
+    def api_state_publish_queue(self):
+        self.client.post("/v1/test-app/API_STATE_PUBLISH_QUEUE", params={"action": "pop"})
+
+    @task(58)
+    def error_queue(self):
+        self.client.post("/v1/test-app/ERROR_QUEUE", params={"action": "pop"})
+
+    @task(54)
+    def orchestrator_copy_response_work1(self):
+        self.client.post("/v1/test-app/ORCHESTRATOR_COPY_RESPONSE_work1", params={"action": "pop"})
+
+    @task(54)
+    def orchestrator_copy_response_work2(self):
+        self.client.post("/v1/test-app/ORCHESTRATOR_COPY_RESPONSE_work2", params={"action": "pop"})
+
+    @task(182)
+    def orchestrator_copy_request_work1(self):
+        self.client.post("/v1/test-app/ORCHESTRATOR_COPY_REQUEST_work1", params={"action": "pop"})
+
+    @task(182)
+    def orchestrator_copy_request_work2(self):
+        self.client.post("/v1/test-app/ORCHESTRATOR_COPY_REQUEST_work2", params={"action": "pop"})
+
+    @task(53)
+    def orchestrator_request_work1(self):
+        self.client.post("/v1/test-app/ORCHESTRATOR_REQUEST_work1", params={"action": "pop"})
+
+    @task(54)
+    def orchestrator_request_work2(self):
+        self.client.post("/v1/test-app/ORCHESTRATOR_REQUEST_work2", params={"action": "pop"})
+
+    @task(183)
+    def caller_queue_work1(self):
+        self.client.post("/v1/test-app/CALLER_QUEUE_work1", params={"action": "pop"})
+
+    @task(183)
+    def caller_queue_work2(self):
+        self.client.post("/v1/test-app/CALLER_QUEUE_work2", params={"action": "pop"})
+
+    @task(5)
+    def caller_queue_work1_push(self):
+        self.client.post("/v1/test-app/CALLER_QUEUE_work1", params={"action": "push"}, data=pickled_work)
+
+    @task(5)
+    def delta_queue_push(self):
+        self.client.post("/v1/test-app/DELTA_QUEUE", params={"action": "push"}, data=long_json)
+
+    @task(10)
+    def orchestrator_copy_request_work2_push(self):
+        self.client.post("/v1/test-app/ORCHESTRATOR_COPY_REQUEST_work2", params={"action": "push"}, data=pickled_work)
+
+    @task(10)
+    def orchestrator_copy_request_work1_push(self):
+        self.client.post("/v1/test-app/ORCHESTRATOR_COPY_REQUEST_work1", params={"action": "push"}, data=pickled_work)

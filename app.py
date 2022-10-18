@@ -21,7 +21,7 @@ class LocustWork(LightningWork):
         if self.is_master:
             command = ["locust", "--web-host", "0.0.0.0", "--web-port", str(self.port), "--master"]
         else:
-            command = ["locust", "--worker", "--master-host", master_ip, "--master-port", str(master_port)]
+            command = ["locust", "--worker", "--master-host", master_ip]
 
         subprocess.run(command, cwd=Path(__file__).parent, check=True)
 
@@ -42,6 +42,15 @@ class Root(LightningFlow):
         self.slave3 = LocustWork(1)
         self.slave3.cloud_compute = compute
 
+        self.slave4 = LocustWork(1)
+        self.slave4.cloud_compute = compute
+
+        self.slave5 = LocustWork(1)
+        self.slave5.cloud_compute = compute
+
+        self.slave6 = LocustWork(1)
+        self.slave6.cloud_compute = compute
+
     def run(self):
         self.master.run()
         print(self.master.internal_ip, self.master.port)
@@ -49,9 +58,13 @@ class Root(LightningFlow):
             self.slave1.run(master_ip=self.master.internal_ip, master_port=self.master.port)
             self.slave2.run(master_ip=self.master.internal_ip, master_port=self.master.port)
             self.slave3.run(master_ip=self.master.internal_ip, master_port=self.master.port)
+            self.slave4.run(master_ip=self.master.internal_ip, master_port=self.master.port)
+            self.slave5.run(master_ip=self.master.internal_ip, master_port=self.master.port)
+            self.slave6.run(master_ip=self.master.internal_ip, master_port=self.master.port)
 
     def configure_layout(self):
         return {"name": "Dashboard", "content": self.master.url}
 
 
 app = LightningApp(Root())
+
