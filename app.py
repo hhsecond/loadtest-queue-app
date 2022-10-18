@@ -3,7 +3,6 @@ from typing import Optional
 import subprocess
 
 from lightning.app import LightningFlow, LightningApp, LightningWork
-from lightning.app.structures import List
 from lightning.app import CloudCompute
 
 
@@ -51,6 +50,18 @@ class Root(LightningFlow):
         self.slave6 = LocustWork(1)
         self.slave6.cloud_compute = compute
 
+        self.slave7 = LocustWork(1)
+        self.slave7.cloud_compute = compute
+
+        self.slave8 = LocustWork(1)
+        self.slave8.cloud_compute = compute
+
+        self.slave9 = LocustWork(1)
+        self.slave9.cloud_compute = compute
+
+        self.slave10 = LocustWork(1)
+        self.slave10.cloud_compute = compute
+
     def run(self):
         self.master.run()
         print(self.master.internal_ip, self.master.port)
@@ -61,6 +72,10 @@ class Root(LightningFlow):
             self.slave4.run(master_ip=self.master.internal_ip, master_port=self.master.port)
             self.slave5.run(master_ip=self.master.internal_ip, master_port=self.master.port)
             self.slave6.run(master_ip=self.master.internal_ip, master_port=self.master.port)
+            self.slave7.run(master_ip=self.master.internal_ip, master_port=self.master.port)
+            self.slave8.run(master_ip=self.master.internal_ip, master_port=self.master.port)
+            self.slave9.run(master_ip=self.master.internal_ip, master_port=self.master.port)
+            self.slave10.run(master_ip=self.master.internal_ip, master_port=self.master.port)
 
     def configure_layout(self):
         return {"name": "Dashboard", "content": self.master.url}
